@@ -10,12 +10,13 @@
 #include <fstream>
 
 constexpr auto RUNE_IMAGE_SIZE { sf::Vector2i { 32, 32 } };
-constexpr auto BUTTON_HOVER_COLOR { sf::Color { 237, 233, 149 } };
+constexpr auto BUTTON_HOVER_COLOR { sf::Color { 237 / 2, 233 / 2, 149 / 2 } };
 constexpr auto HOVER_BUTTON_FONT_SIZE { 34u };
 constexpr auto BUTTON_FONT_SIZE { 32u };
 constexpr auto TITLE_TEXT_FONT_SIZE { 48u };
-constexpr auto GUESS_BUTTON_BACKDROP_SIZE { sf::Vector2f { 95.f, 50.f } };
+constexpr auto GUESS_BUTTON_BACKDROP_SIZE { sf::Vector2f { 150.f, 50.f } };
 constexpr auto TITLE_TEXT_Y_OFFSET { 100.f };
+constexpr auto POST_GUESS_WAIT { sf::seconds(3.f) };
 
 inline void CentreTextOrigin(sf::Text& text)
 {
@@ -227,8 +228,8 @@ void RuneRemember::setupRandomTestMode()
     const auto yPosition { runeBounds.getPosition().y + runeBounds.getSize().y };
 
     m_guessButtons[0].text.setPosition({ windowCentre.x, yPosition + 50.f });
-    m_guessButtons[1].text.setPosition(m_guessButtons[0].text.getPosition() - sf::Vector2f { 150.f, 0.f });
-    m_guessButtons[2].text.setPosition(m_guessButtons[0].text.getPosition() + sf::Vector2f { 150.f, 0.f });
+    m_guessButtons[1].text.setPosition(m_guessButtons[0].text.getPosition() - sf::Vector2f { 250.f, 0.f });
+    m_guessButtons[2].text.setPosition(m_guessButtons[0].text.getPosition() + sf::Vector2f { 250.f, 0.f });
 
     for (auto& gb : m_guessButtons) {
         gb.text.setFont(m_mainFont);
@@ -250,9 +251,59 @@ void RuneRemember::drawRandomTestMode()
     }
 }
 
-void RuneRemember::updateRandomTestMode(const sf::Time& dt) { _CRT_UNUSED(dt); }
+void RuneRemember::updateRandomTestMode(const sf::Time& dt)
+{
+    _CRT_UNUSED(dt);
+    if (!m_guessMade) {
+        for (auto& gb : m_guessButtons) {
+            if (gb.text.getGlobalBounds().contains(m_mousePosition)) {
+                gb.text.setFillColor(BUTTON_HOVER_COLOR);
+            } else {
+                gb.text.setFillColor(sf::Color::White);
+            }
+        }
+    } else {
+        m_postGuessTimer += dt;
+        if (m_postGuessTimer >= POST_GUESS_WAIT) {
+            randomiseTestGuesses();
+        }
+    }
+}
 
-void RuneRemember::handleEventRandomTestMode(const sf::Event& event) { _CRT_UNUSED(event); }
+void RuneRemember::handleEventRandomTestMode(const sf::Event& event)
+{
+    if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            // The button was clicked so we'll iterate over all buttons
+            // and then when we found the clicked one we'll highlight
+            // its colour depending on whether it was correct or incorrect.
+            // If it was incorrect we'll also highlight the correct one
+            for (auto& gb : m_guessButtons) {
+                if (gb.text.getGlobalBounds().contains(m_mousePosition)) {
+                    if (gb.text.getString() == m_runesInfo[m_runeIndex].name) {
+                        spdlog::debug("Correct");
+                        gb.text.setFillColor(sf::Color::Green);
+                    } else {
+                        spdlog::debug("Incorrect");
+                        gb.text.setFillColor(sf::Color::Red);
+                        auto result = std::find_if(m_guessButtons.begin(), m_guessButtons.end(), [this](const GuessButton& button) {
+                            return button.text.getString() == m_runesInfo[m_runeIndex].name;
+                        });
+
+                        // We shouldn't reach a situation where we don't find a
+                        // correct answer, if we do then uhh debug this!
+                        if (result == m_guessButtons.end())
+                            assert(false);
+
+                        result->text.setFillColor(sf::Color::Green);
+                    }
+                    m_guessMade = true;
+                    break; // We found a guess so we should stop
+                }
+            }
+        }
+    }
+}
 
 void RuneRemember::randomiseTestGuesses()
 {
@@ -290,4 +341,12 @@ void RuneRemember::randomiseTestGuesses()
 
         CentreTextOrigin(m_guessButtons[i].text);
     }
+
+    m_guessMade = false;
+
+    for (auto& gb : m_guessButtons) {
+        gb.text.setFillColor(sf::Color::White);
+    }
+
+    m_postGuessTimer = sf::Time::Zero;
 }

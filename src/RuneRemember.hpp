@@ -33,7 +33,7 @@ private:
     bool loadRuneInfoFromDisk();
     void update(const sf::Time& dt);
     void updateRuneSprite();
-    
+
     /* Select Mode Methods */
     void setupSelectMode();
     void drawSelectMode();
@@ -68,4 +68,6 @@ private:
     sf::Text m_questionText;
     sf::Sprite m_activeRune;
     AppMode m_currentMode { AppMode::Select };
+    sf::Time m_postGuessTimer;
+    bool m_guessMade { false };
 };
