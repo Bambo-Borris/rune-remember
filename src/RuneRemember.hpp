@@ -7,7 +7,9 @@
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/String.hpp>
+
 #include <array>
+#include <random>
 #include <vector>
 
 class RuneRemember {
@@ -20,7 +22,7 @@ private:
         size_t index;
         sf::String name;
     };
-    
+
     struct GuessButton {
         sf::Text text;
         sf::RectangleShape backdrop;
@@ -30,7 +32,8 @@ private:
     /* Misc Methods */
     bool loadRuneInfoFromDisk();
     void update(const sf::Time& dt);
-
+    void updateRuneSprite();
+    
     /* Select Mode Methods */
     void setupSelectMode();
     void drawSelectMode();
@@ -41,6 +44,8 @@ private:
     void setupRandomTestMode();
     void drawRandomTestMode();
     void updateRandomTestMode(const sf::Time& dt);
+    void handleEventRandomTestMode(const sf::Event& event);
+    void randomiseTestGuesses();
 
     /* Misc Members */
     sf::RenderWindow m_window;
@@ -49,6 +54,8 @@ private:
     std::vector<Rune> m_runesInfo;
     size_t m_runeIndex { 0 };
     sf::Vector2f m_mousePosition;
+    std::default_random_engine m_randomEngine;
+    std::random_device m_randomDevice;
 
     /* Select Mode Members */
     sf::Text m_selectModeTitleText;
@@ -57,9 +64,8 @@ private:
 
     /* Random Test Mode Members */
     std::array<GuessButton, 3> m_guessButtons;
+    size_t m_correctAnswerIndex { 0 };
     sf::Text m_questionText;
-
     sf::Sprite m_activeRune;
-
     AppMode m_currentMode { AppMode::Select };
 };
