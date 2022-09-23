@@ -5,8 +5,8 @@ SFML_DEFINE_DISCRETE_GPU_PREFERENCE
 
 int main(int argc, char* argv[])
 {
-    (void)argc;
-    (void)argv;
+    _CRT_UNUSED(argc);
+    _CRT_UNUSED(argv);
 
     RuneRemember rr;
 
