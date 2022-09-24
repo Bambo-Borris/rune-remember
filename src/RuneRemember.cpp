@@ -281,10 +281,8 @@ void RuneRemember::handleEventRandomTestMode(const sf::Event& event)
             for (auto& gb : m_guessButtons) {
                 if (gb.text.getGlobalBounds().contains(m_mousePosition)) {
                     if (gb.text.getString() == m_runesInfo[m_runeIndex].name) {
-                        spdlog::debug("Correct");
                         gb.text.setFillColor(sf::Color::Green);
                     } else {
-                        spdlog::debug("Incorrect");
                         gb.text.setFillColor(sf::Color::Red);
                         auto result = std::find_if(m_guessButtons.begin(), m_guessButtons.end(), [this](const GuessButton& button) {
                             return button.text.getString() == m_runesInfo[m_runeIndex].name;
@@ -311,6 +309,9 @@ void RuneRemember::randomiseTestGuesses()
     static auto runeDist { std::uniform_int_distribution<size_t>(0, m_runesInfo.size() - 1) };
     std::array<sf::String, 2> randomRuneNames;
 
+    for (auto& gb : m_guessButtons)
+        gb.text.setString("");
+
     m_correctAnswerIndex = guessDist(m_randomEngine);
     m_runeIndex = runeDist(m_randomEngine);
     updateRuneSprite();
@@ -318,8 +319,8 @@ void RuneRemember::randomiseTestGuesses()
     do {
         randomRuneNames[0] = m_runesInfo[runeDist(m_randomEngine)].name;
         randomRuneNames[1] = m_runesInfo[runeDist(m_randomEngine)].name;
-    } while (randomRuneNames[0] == randomRuneNames[1] && randomRuneNames[0] != m_runesInfo[m_runeIndex].name
-             && randomRuneNames[1] != m_runesInfo[m_runeIndex].name);
+    } while (randomRuneNames[0] == randomRuneNames[1] || randomRuneNames[0] == m_runesInfo[m_runeIndex].name
+             || randomRuneNames[1] == m_runesInfo[m_runeIndex].name);
 
     // Setup the correct answer
     m_guessButtons[m_correctAnswerIndex].text.setString(m_runesInfo[m_runeIndex].name);
