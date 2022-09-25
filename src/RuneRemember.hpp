@@ -27,7 +27,7 @@ private:
         sf::Text text;
         sf::RectangleShape backdrop;
     };
-    enum class AppMode { Select, RandomTest, SlowRunThrough, Complete };
+    enum class AppMode { Select, RandomTest, SlowRunThrough };
 
     /* Misc Methods */
     bool loadRuneInfoFromDisk();
@@ -47,6 +47,12 @@ private:
     void handleEventRandomTestMode(const sf::Event& event);
     void randomiseTestGuesses();
 
+    /* Slow Run Through Methods */
+    void setupSlowRunThroughMode();
+    void drawSlowRunThroughMode();
+    void updateSlowRunThroughMode(const sf::Time& dt);
+    void handleEventSlowRunThroughMode(const sf::Event& event);
+
     /* Misc Members */
     sf::RenderWindow m_window;
     sf::Texture m_runeSheet;
@@ -56,6 +62,7 @@ private:
     sf::Vector2f m_mousePosition;
     std::default_random_engine m_randomEngine;
     std::random_device m_randomDevice;
+    sf::Sprite m_runeSprite;
 
     /* Select Mode Members */
     sf::Text m_selectModeTitleText;
@@ -66,8 +73,11 @@ private:
     std::array<GuessButton, 3> m_guessButtons;
     size_t m_correctAnswerIndex { 0 };
     sf::Text m_questionText;
-    sf::Sprite m_activeRune;
     AppMode m_currentMode { AppMode::Select };
     sf::Time m_postGuessTimer;
     bool m_guessMade { false };
+
+    /* Slow Run Through Mode */
+    sf::Text m_runeNameText;
+    sf::Time m_slowModeTimer;
 };
