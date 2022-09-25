@@ -17,6 +17,7 @@ constexpr auto TITLE_TEXT_FONT_SIZE { 48u };
 constexpr auto GUESS_BUTTON_BACKDROP_SIZE { sf::Vector2f { 150.f, 50.f } };
 constexpr auto TITLE_TEXT_Y_OFFSET { 100.f };
 constexpr auto POST_GUESS_WAIT { sf::seconds(3.f) };
+constexpr auto SLOW_RUN_THROUGH_WAIT { sf::seconds(1.f) };
 
 inline void CentreTextOrigin(sf::Text& text)
 {
@@ -49,6 +50,7 @@ RuneRemember::RuneRemember()
 
     setupSelectMode();
     setupRandomTestMode();
+    setupSlowRunThroughMode();
 }
 
 void RuneRemember::run()
@@ -78,6 +80,9 @@ void RuneRemember::run()
             case AppMode::RandomTest:
                 handleEventRandomTestMode(event);
                 break;
+            case AppMode::SlowRunThrough:
+                handleEventSlowRunThroughMode(event);
+                break;
             default:
                 assert(false);
             }
@@ -92,6 +97,9 @@ void RuneRemember::run()
             break;
         case AppMode::RandomTest:
             drawRandomTestMode();
+            break;
+        case AppMode::SlowRunThrough:
+            drawSlowRunThroughMode();
             break;
         default:
             assert(false);
@@ -128,13 +136,16 @@ void RuneRemember::update(const sf::Time& dt)
     case AppMode::RandomTest:
         updateRandomTestMode(dt);
         break;
+    case AppMode::SlowRunThrough:
+        updateSlowRunThroughMode(dt);
+        break;
     default:
         assert(false);
         break;
     }
 }
 
-void RuneRemember::updateRuneSprite() { m_activeRune.setTextureRect({ { static_cast<int32_t>(m_runeIndex) * RUNE_IMAGE_SIZE.x, 0 }, RUNE_IMAGE_SIZE }); }
+void RuneRemember::updateRuneSprite() { m_runeSprite.setTextureRect({ { static_cast<int32_t>(m_runeIndex) * RUNE_IMAGE_SIZE.x, 0 }, RUNE_IMAGE_SIZE }); }
 
 void RuneRemember::setupSelectMode()
 {
@@ -198,22 +209,24 @@ void RuneRemember::handleEventSelectMode(const sf::Event& event)
     if (event.mouseButton.button == sf::Mouse::Left) {
         if (m_selectRunThroughButton.getGlobalBounds().contains(m_mousePosition)) {
             m_currentMode = AppMode::SlowRunThrough;
+            m_slowModeTimer = sf::Time::Zero;
         } else if (m_selectRandomTestButton.getGlobalBounds().contains(m_mousePosition)) {
             m_currentMode = AppMode::RandomTest;
             randomiseTestGuesses();
+            m_postGuessTimer = sf::Time::Zero;
         }
     }
 }
 
 void RuneRemember::setupRandomTestMode()
 {
-    m_activeRune.setTexture(m_runeSheet);
-    m_activeRune.setTextureRect({ { 0, 0 }, RUNE_IMAGE_SIZE });
-    m_activeRune.setScale({ 10, 10 });
-    m_activeRune.setOrigin(sf::Vector2f { RUNE_IMAGE_SIZE } * 0.5f);
-    m_activeRune.setPosition(sf::Vector2f { m_window.getSize() } * 0.5f);
+    m_runeSprite.setTexture(m_runeSheet);
+    m_runeSprite.setTextureRect({ { 0, 0 }, RUNE_IMAGE_SIZE });
+    m_runeSprite.setScale({ 10, 10 });
+    m_runeSprite.setOrigin(sf::Vector2f { RUNE_IMAGE_SIZE } * 0.5f);
+    m_runeSprite.setPosition(sf::Vector2f { m_window.getSize() } * 0.5f);
 
-    const auto runeBounds { m_activeRune.getGlobalBounds() };
+    const auto runeBounds { m_runeSprite.getGlobalBounds() };
 
     m_questionText.setFont(m_mainFont);
     m_questionText.setCharacterSize(TITLE_TEXT_FONT_SIZE);
@@ -244,7 +257,7 @@ void RuneRemember::setupRandomTestMode()
 void RuneRemember::drawRandomTestMode()
 {
     m_window.draw(m_questionText);
-    m_window.draw(m_activeRune);
+    m_window.draw(m_runeSprite);
     for (const auto& gb : m_guessButtons) {
         m_window.draw(gb.backdrop);
         m_window.draw(gb.text);
@@ -351,3 +364,35 @@ void RuneRemember::randomiseTestGuesses()
 
     m_postGuessTimer = sf::Time::Zero;
 }
+
+void RuneRemember::setupSlowRunThroughMode()
+{
+    m_runeIndex = 0;
+    updateRuneSprite();
+
+    m_runeNameText.setFont(m_mainFont);
+    m_runeNameText.setCharacterSize(TITLE_TEXT_FONT_SIZE);
+    m_runeNameText.setString(m_runesInfo[m_runeIndex].name);
+    CentreTextOrigin(m_runeNameText);
+    m_runeNameText.setPosition({ static_cast<float>(m_window.getSize().x) * 0.5f, TITLE_TEXT_Y_OFFSET });
+}
+
+void RuneRemember::drawSlowRunThroughMode()
+{
+    m_window.draw(m_runeNameText);
+    m_window.draw(m_runeSprite);
+}
+
+void RuneRemember::updateSlowRunThroughMode(const sf::Time& dt)
+{
+    m_slowModeTimer += dt;
+    if (m_slowModeTimer > SLOW_RUN_THROUGH_WAIT) {
+        m_runeIndex = (m_runeIndex + 1 >= m_runesInfo.size() ? 0 : m_runeIndex + 1);
+        updateRuneSprite();
+        m_runeNameText.setString(m_runesInfo[m_runeIndex].name);
+        CentreTextOrigin(m_runeNameText);
+        m_slowModeTimer = sf::Time::Zero;
+    }
+}
+
+void RuneRemember::handleEventSlowRunThroughMode(const sf::Event& event) { _CRT_UNUSED(event); }
